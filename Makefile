@@ -1,6 +1,9 @@
 
 
 
+check:
+	pyflakes geark
+	pep8 geark
 
 test:
 	python -m unittest discover geark 'test*.py'

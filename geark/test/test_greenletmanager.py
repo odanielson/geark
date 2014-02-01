@@ -7,6 +7,7 @@ from gevent.queue import Queue, Empty
 
 from geark import greenletmanager
 
+
 class GreenletManagerHappyPathTestCase(unittest.TestCase):
 
     def setUp(self):
@@ -18,9 +19,9 @@ class GreenletManagerHappyPathTestCase(unittest.TestCase):
     def test_starting_greenlet(self):
         """Verify that a greenlet can be started."""
         queue = Queue()
+
         def loop(queue):
             queue.put("hello")
-
 
         greenletmanager.instance.start_greenlet(
             "testloop", None, False, loop, queue)
@@ -28,7 +29,6 @@ class GreenletManagerHappyPathTestCase(unittest.TestCase):
 
         msg = queue.get()
         self.assertEquals(msg, "hello")
-
 
     def test_stopping_greenlet(self):
         """Verify that a greenlet can be stopped."""
@@ -40,7 +40,6 @@ class GreenletManagerHappyPathTestCase(unittest.TestCase):
             while True:
                 msg = ping.get()
                 pong.put(msg)
-
 
         greenletmanager.instance.start_greenlet(
             "pingpongloop", None, False, ping_pong, ping, pong)

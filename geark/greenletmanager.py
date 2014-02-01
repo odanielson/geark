@@ -5,8 +5,10 @@ import gevent
 
 log = logging.getLogger("GreenletManager")
 
+
 class GreenletAlreadyExistsError(Exception):
     pass
+
 
 class GreenletManager(object):
 
@@ -17,15 +19,14 @@ class GreenletManager(object):
                        *args, **kwargs):
 
         if key in self.greenlet_map:
-            raise GrennletAlreadyExistsError(
+            raise GreenletAlreadyExistsError(
                 "Greenlet with key %s already exists." % (key))
 
         self.greenlet_map[key] = {
             "greenlet": gevent.spawn(function, *args, **kwargs),
             "children": [],
             "auto_restart": auto_restart,
-            "restart_count": 0
-            }
+            "restart_count": 0}
         log.info("Started greenlet %s" % key)
 
     def list_greenlets(self):
