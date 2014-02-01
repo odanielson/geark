@@ -22,13 +22,14 @@ class GreenletManager(object):
                 function(*args, **kwargs)
                 log.warning("greenlet \"%s\" stopped gracefully." % key)
             except Exception as e:
-                log.warning("greenlet \"%s\" raised: %s" % (key, e))
+                log.warning("greenlet \"%s\" crashed: %s" % (key, e))
                 # TODO: dump a stacktrace here
 
             if not auto_restart:
                 break
 
             log.info("restarting greenlet \"%s\"" % key)
+        del self.greenlet_map[key]
 
     def start_greenlet(self, key, parent, auto_restart, function,
                        *args, **kwargs):
@@ -56,8 +57,6 @@ class GreenletManager(object):
             gevent.kill(greenlet["greenlet"])
             del self.greenlet_map[key]
             log.info("Stopped greenlet \"%s\"" % key)
-
-
 
 
 instance = GreenletManager()

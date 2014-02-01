@@ -1,5 +1,6 @@
 
-import logging
+#import logging
+#logging.basicConfig(level=logging.DEBUG)
 import unittest
 
 import gevent
@@ -11,7 +12,6 @@ from geark import greenletmanager
 class GreenletManagerHappyPathTestCase(unittest.TestCase):
 
     def setUp(self):
-#        logging.basicConfig(level=logging.DEBUG)
         self.ping = Queue()
         self.pong = Queue()
 
@@ -93,3 +93,29 @@ class GreenletManagerHappyPathTestCase(unittest.TestCase):
 
         self.ping.put("hello")
         self.assertEquals("hello", self.pong.get())
+
+        greenletmanager.instance.stop_greenlet("crashingpingpongloop")
+
+    def test_list_greenlets(self):
+        """Verify that list_greenlets returns the of running greenlets."""
+        def stopping_loop():
+            pass
+
+        def running_loop():
+            while True:
+                gevent.sleep(0.1)
+
+        greenletmanager.instance.start_greenlet(
+            "stoppingloop", None, False, stopping_loop)
+
+        greenletmanager.instance.start_greenlet(
+            "runningloop1", None, False, running_loop)
+
+        greenletmanager.instance.start_greenlet(
+            "runningloop2", None, False, running_loop)
+
+        self._release_context()
+        greenlets = greenletmanager.instance.list_greenlets()
+        self.assertTrue("runningloop1" in greenlets)
+        self.assertTrue("runningloop2" in greenlets)
+        self.assertFalse("stoppingloop" in greenlets)
