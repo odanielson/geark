@@ -119,3 +119,17 @@ class GreenletManagerHappyPathTestCase(unittest.TestCase):
         self.assertTrue("runningloop1" in greenlets)
         self.assertTrue("runningloop2" in greenlets)
         self.assertFalse("stoppingloop" in greenlets)
+
+    def test_status(self):
+        """Verify that status returns a dict."""
+        def running_loop():
+            while True:
+                gevent.sleep(0.1)
+
+        greenletmanager.instance.start_greenlet(
+            "runningloop", None, False, running_loop)
+
+        status = greenletmanager.instance.status("runningloop")
+        self.assertEquals(False, status["auto_restart"])
+        self.assertEquals(0, status["restart_count"])
+        self.assertEquals("runningloop", status["key"])

@@ -10,6 +10,10 @@ class GreenletAlreadyExistsError(Exception):
     pass
 
 
+class GreenletNotFoundError(Exception):
+    pass
+
+
 class GreenletManager(object):
 
     def __init__(self):
@@ -50,13 +54,30 @@ class GreenletManager(object):
         """Returns a list with greenlet keys."""
         return self.greenlet_map.keys()
 
-    def stop_greenlet(self, key):
+    def status(self, key):
+        """Return a status dict for greenlet give by key.
 
+        return: dict with status for greenlet
+        raise: GreenletNotFoundError if greenlet for key does not exist."""
+        greenlet = self.greenlet_map.get(key)
+        if greenlet:
+            return {"key": key,
+                    "auto_restart": greenlet["auto_restart"],
+                    "restart_count": greenlet["restart_count"]}
+        else:
+            raise GreenletNotFoundError("Greenlet \"%s\" not found." % key)
+
+    def stop_greenlet(self, key):
+        """Stop greenlet given by key
+
+        raise: GreenletNotFoundError if greenlet does not exist.
+        """
         greenlet = self.greenlet_map.get(key)
         if greenlet:
             gevent.kill(greenlet["greenlet"])
             del self.greenlet_map[key]
             log.info("Stopped greenlet \"%s\"" % key)
-
+        else:
+            raise GreenletNotFoundError("Greenlet \"%s\" not found." % key)
 
 instance = GreenletManager()
