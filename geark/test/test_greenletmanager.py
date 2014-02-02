@@ -1,3 +1,10 @@
+"""test_greenletmanager is part of the geark library and contains unit tests
+for greenletmanager.py.
+
+https://github.com/odanielson/geark
+Copyright 2014, odanielson@github.com
+MIT-license
+"""
 
 #import logging
 #logging.basicConfig(level=logging.DEBUG)
@@ -25,7 +32,7 @@ class GreenletManagerHappyPathTestCase(unittest.TestCase):
             queue.put("hello")
 
         greenletmanager.instance.start_greenlet(
-            "testloop", None, False, loop, self.ping)
+            "testloop", False, loop, self.ping)
         self._release_context()
 
         msg = self.ping.get()
@@ -40,7 +47,7 @@ class GreenletManagerHappyPathTestCase(unittest.TestCase):
                 pong.put(msg)
 
         greenletmanager.instance.start_greenlet(
-            "pingpongloop", None, False, ping_pong, self.ping, self.pong)
+            "pingpongloop", False, ping_pong, self.ping, self.pong)
         self._release_context()
 
         self.ping.put("hello")
@@ -59,7 +66,7 @@ class GreenletManagerHappyPathTestCase(unittest.TestCase):
             pong.put(msg)
 
         greenletmanager.instance.start_greenlet(
-            "stoppingpingpongloop", None, True, stopping_ping_pong, self.ping,
+            "stoppingpingpongloop", True, stopping_ping_pong, self.ping,
             self.pong)
         self._release_context()
 
@@ -81,7 +88,7 @@ class GreenletManagerHappyPathTestCase(unittest.TestCase):
             raise Exception("Crash bing bong!")
 
         greenletmanager.instance.start_greenlet(
-            "crashingpingpongloop", None, True, crashing_ping_pong, self.ping,
+            "crashingpingpongloop", True, crashing_ping_pong, self.ping,
             self.pong)
         self._release_context()
 
@@ -106,13 +113,13 @@ class GreenletManagerHappyPathTestCase(unittest.TestCase):
                 gevent.sleep(0.1)
 
         greenletmanager.instance.start_greenlet(
-            "stoppingloop", None, False, stopping_loop)
+            "stoppingloop", False, stopping_loop)
 
         greenletmanager.instance.start_greenlet(
-            "runningloop1", None, False, running_loop)
+            "runningloop1", False, running_loop)
 
         greenletmanager.instance.start_greenlet(
-            "runningloop2", None, False, running_loop)
+            "runningloop2", False, running_loop)
 
         self._release_context()
         greenlets = greenletmanager.instance.list_greenlets()
@@ -127,9 +134,71 @@ class GreenletManagerHappyPathTestCase(unittest.TestCase):
                 gevent.sleep(0.1)
 
         greenletmanager.instance.start_greenlet(
-            "runningloop", None, False, running_loop)
+            "runningloop", False, running_loop)
 
         status = greenletmanager.instance.status("runningloop")
         self.assertEquals(False, status["auto_restart"])
         self.assertEquals(0, status["restart_count"])
         self.assertEquals("runningloop", status["key"])
+        self.assertEquals([], status["children"])
+
+    def test_child_is_stopped_with_parent(self):
+        """Verify a child is stopped when the parent is stopped."""
+        def start_child_loop():
+            def child_loop():
+                while True:
+                    gevent.sleep(0.1)
+
+            greenletmanager.instance.start_greenlet(
+                "childloop", False, child_loop)
+
+            while True:
+                gevent.sleep(0.1)
+
+        greenletmanager.instance.start_greenlet(
+            "startchildloop", False, start_child_loop)
+
+        self._release_context()
+        greenlets = greenletmanager.instance.list_greenlets()
+        self.assertTrue("startchildloop" in greenlets)
+        self.assertTrue("childloop" in greenlets)
+
+        status = greenletmanager.instance.status("startchildloop")
+        self.assertEquals(["childloop"], status["children"])
+
+        greenletmanager.instance.stop_greenlet("startchildloop")
+        greenlets = greenletmanager.instance.list_greenlets()
+        self.assertFalse("startchildloop" in greenlets)
+        self.assertFalse("childloop" in greenlets)
+
+    def test_child_is_removed_from_parent(self):
+        """Verify a child is removed from it's parent when stopped."""
+
+        def start_child_loop():
+            def child_loop():
+                while True:
+                    gevent.sleep(0.1)
+
+            greenletmanager.instance.start_greenlet(
+                "childloop", False, child_loop)
+
+            while True:
+                gevent.sleep(0.1)
+
+        greenletmanager.instance.start_greenlet(
+            "startchildloop", False, start_child_loop)
+
+        self._release_context()
+        greenlets = greenletmanager.instance.list_greenlets()
+        self.assertTrue("startchildloop" in greenlets)
+        self.assertTrue("childloop" in greenlets)
+
+        greenletmanager.instance.stop_greenlet("childloop")
+        greenlets = greenletmanager.instance.list_greenlets()
+        self.assertTrue("startchildloop" in greenlets)
+        self.assertFalse("childloop" in greenlets)
+
+        status = greenletmanager.instance.status("startchildloop")
+        self.assertEquals([], status["children"])
+
+        greenletmanager.instance.stop_greenlet("startchildloop")
