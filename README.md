@@ -1,8 +1,8 @@
 geark
 =====
 
-** Current status: Unstable lab state, only parts of greenletmanager
-implemented. **
+**status:** Unstable lab state, only parts of greenletmanager
+implemented.
 
 Geark is a python gevent based library that provides a few functionalities
 for building greenlet-queue based applications with gevent.
